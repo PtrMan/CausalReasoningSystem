@@ -20,7 +20,7 @@ public class TrackbackGenerator
         causalGraph.resetAnnotation();
         
         // add all root indices
-        workingNodeIndices = getRootIndices(causalGraph);
+        workingNodeIndices = causalGraph.getRootIndices();
         
         for(;;)
         {
@@ -210,27 +210,6 @@ public class TrackbackGenerator
             }
         }
     }*/
-    
-    static private ArrayList<Integer> getRootIndices(DecoratedCausalGraph causalGraph)
-    {
-        ArrayList<Integer> result;
-        int i;
-        
-        result = new ArrayList<Integer>();
-        
-        i = 0;
-        for( DecoratedCausalGraph.Node iterationNode : causalGraph.nodes )
-        {
-            if( iterationNode.isRoot() )
-            {
-                result.add(new Integer(i));
-            }
-            
-            i++;
-        }
-        
-        return result;
-    }
     
     static private int getIndexOfElementInArray(int[] array, int element)
     {
