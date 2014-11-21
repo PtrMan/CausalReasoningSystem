@@ -9,24 +9,6 @@ public class DecoratedCausalGraph
     {
         public static class Anotation
         {
-            /*
-            public class OutgoingEdge
-            {
-                public boolean isRed;
-                
-                public ArrayList<Integer> outgoingEdgeBounced = new ArrayList<Integer>();
-                // invariant: elements in that list are not allready in the output
-                // elements get removed as elements are taken out
-                
-                public boolean areRemainingOutgoingEdgeBounced()
-                {
-                    return outgoingEdgeBounced.size() > 0;
-                }
-            }
-            
-            public OutgoingEdge[] outgoingEdges;
-            */
-            
             public boolean isOrWasInWorkingSet; // is/was this node in the working set for ttraversal?
             
             // flags used to indicate that the node of the incomming edge must occur before that node
@@ -56,38 +38,6 @@ public class DecoratedCausalGraph
             {
                 return outputIndex != -1;
             }
-            
-            /*
-            public boolean existAnyRemainingOutgoingEdgeBounced()
-            {
-                int i;
-                
-                for( i = 0; i < outgoingEdges.length; i++ )
-                {
-                    if( outgoingEdges[i].areRemainingOutgoingEdgeBounced() )
-                    {
-                        return true;
-                    }
-                }
-                
-                return false;
-            }
-            
-            // INVARIANT< only callable if existAnyRemainingOutgoingEdgeBounced() returns true, else it goes into an infinite loop >
-            public OutgoingEdge getRandomOutgoingEdgeWithRemainingOutgoingEdgeBounced(Random random)
-            {
-                for(;;)
-                {
-                    int currentOutgoingEdgeIndex;
-                    
-                    currentOutgoingEdgeIndex = random.nextInt(outgoingEdges.length);
-                    
-                    if( outgoingEdges[currentOutgoingEdgeIndex].areRemainingOutgoingEdgeBounced() )
-                    {
-                        return outgoingEdges[currentOutgoingEdgeIndex];
-                    }
-                }
-            }*/
             
             public Anotation clone()
             {
@@ -134,8 +84,6 @@ public class DecoratedCausalGraph
     public int energy = Integer.MAX_VALUE;
     
     public ArrayList<Node> nodes = new ArrayList<Node>();
-    
-    //public int[] rootIndices;
     
     public void resetAnnotation()
     {
