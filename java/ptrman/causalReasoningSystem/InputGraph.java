@@ -1,4 +1,4 @@
-package causalreasoningsystem;
+package ptrman.causalReasoningSystem;
 
 import java.util.ArrayList;
 
