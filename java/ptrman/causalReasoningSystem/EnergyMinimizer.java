@@ -32,6 +32,8 @@ public class EnergyMinimizer
         
         if( state.workingGraph.energy < state.minimalEnergy )
         {
+            System.out.println("new minimal energy is " + Integer.toString(state.workingGraph.energy));
+
             state.minimalEnergy = state.workingGraph.energy;
             state.graphWithMinimalEnergy = state.workingGraph.clone();
             state.minimalSequence = potentialMinimalSequence;
