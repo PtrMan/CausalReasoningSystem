@@ -33,8 +33,6 @@ public class UnsupervisedTokenstream {
 
         DecoratedCausalGraph causalGraph = ConvertInputGraphToCausalGraph.convert(inputGraph);
 
-        //ArrayList<Integer> result = TrackbackGenerator.generate(new Random(), causalGraph);
-
         EnergyMinimizer.State state = new EnergyMinimizer.State();
         state.workingGraph = causalGraph;
 
@@ -42,6 +40,44 @@ public class UnsupervisedTokenstream {
 
 
         int y = 0;
+
+        // visualize the result
+        ArrayList<Integer> resultIndices = state.minimalSequence;
+
+        for( int iterationIndex : resultIndices ) {
+            final int tokenIndex = getKeyByValue(tokensToGraphIndices, iterationIndex);
+
+            if( tokenIndex == -1 ) {
+                System.out.print("[] ");
+            }
+            else {
+                System.out.print(getTokenByIndex(tokenIndex, tokenMap));
+                System.out.print(" ");
+            }
+        }
+        System.out.println();
+
+    }
+
+    private static String getTokenByIndex(int tokenIndex, Map<String, Integer> tokenMap) {
+        for( Map.Entry<String, Integer> iterationEntry : tokenMap.entrySet() ) {
+            if( iterationEntry.getValue().intValue() == tokenIndex ) {
+                return iterationEntry.getKey();
+            }
+        }
+
+        throw new RuntimeException("Couldn't find token!");
+    }
+
+
+    private static int getKeyByValue(Map<Integer, Integer> tokensToGraphIndices, int index) {
+        Set<Map.Entry<Integer, Integer>> entrySet = tokensToGraphIndices.entrySet();
+        for( Map.Entry<Integer, Integer> iterationEntry : entrySet ) {
+            if( iterationEntry.getValue().intValue() == index ) {
+                return iterationEntry.getKey();
+            }
+        }
+        return -1;
     }
 
     private static void createOneToOneTokenToGraphIndices(Map<Integer, Integer> target, int number) {
