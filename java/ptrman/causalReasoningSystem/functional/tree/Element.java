@@ -9,6 +9,5 @@ import java.util.List;
 public abstract class Element {
     public Type type;
     public List<Element> children = new ArrayList<>();
-
     public abstract boolean isEqual(final Element other);
 }
