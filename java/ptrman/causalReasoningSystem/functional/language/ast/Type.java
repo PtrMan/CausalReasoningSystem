@@ -7,7 +7,7 @@ public class Type extends ptrman.causalReasoningSystem.functional.tree.Type {
     public enum EnumType {
         FUNCDAMENTAL_SEQUENCE,
 
-        COND,
+        //COND,   is functioncall with method = cond
         FUNCTION_DEFINITION,
         FUNCTION_CALL,
 

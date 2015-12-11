@@ -1,7 +1,6 @@
 package ptrman.causalReasoningSystem.functional.language.codegen;
 
-import javassist.CannotCompileException;
-import javassist.CtMethod;
+import javassist.*;
 import ptrman.causalReasoningSystem.functional.language.ast.Element;
 import ptrman.causalReasoningSystem.functional.language.ast.Type;
 
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javassist.CtClass;
 import ptrman.causalReasoningSystem.functional.language.runtime.ResultAndControlflowPropagationInfo;
 
 /**
@@ -33,11 +31,25 @@ public class CodegenJava {
 
     private final CtClass ctClass;
 
+    private String variableContainerClassName;
+    private CtClass classForVariableContainer;
 
-
-    public CodegenJava(CtClass classTemplate) {
+    public CodegenJava(ClassPool classPool, CtClass classTemplate) {
         this.ctClass = classTemplate;
+
+        variableContainerClassName = "VariableContainerForFunctionalFunction0";
+        classForVariableContainer = classPool.makeClass(variableContainerClassName);
     }
+
+
+
+    public void addVariableFieldsToVariableContainerForGeneratedFunctionalFunction(Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException, NotFoundException {
+        for( String iterationVariablename : typeinfoOfVariables.keySet() ) {
+            classForVariableContainer.addField(new CtField(CtClass.booleanType, iterationVariablename, classForVariableContainer));
+        }
+    }
+
+
 
     public String generateFunctionByStaticTypes(Element astEntry, Map<String, Typeinfo> typeinfoOfVariables) {
         // TODO< uncomment, currently we are testing stuff >
@@ -56,10 +68,11 @@ public class CodegenJava {
 
     // public for testing
     public InlinedResultCodeWithType generateBodyForwardPass(Element astElement, Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException {
+        /*
         if( astElement.type.isEqualWithType(new Type(Type.EnumType.COND)) ) {
             return generateBodyForwardPassForCondition(astElement, typeinfoOfVariables);
-        }
-        else if( astElement.type.isEqualWithType(new Type(Type.EnumType.FUNCTION_CALL))) {
+        }*/
+        if( astElement.type.isEqualWithType(new Type(Type.EnumType.FUNCTION_CALL))) {
             if( astElement.identifier == null ) {
                 if( astElement.callType == Element.EnumCallType.ADD ) {
                     return generateBodyForwardPassForMathematicalAccumulatorOperation("+", EnumMathematicalAccumulatorInitialValue.ZERO, astElement, typeinfoOfVariables);
@@ -78,15 +91,43 @@ public class CodegenJava {
                 }
             }
             else {
+                if( astElement.identifier.equals("cond") ) {
+                    return generateBodyForwardPassForCondition(astElement, typeinfoOfVariables);
+                }
+
+
                 throw new RuntimeException("TODO< generate code for call of function >");
             }
         }
         else if( astElement.type.isEqualWithType(new Type(Type.EnumType.CONSTANT_INTEGER)) ) {
             return generateBodyForwardPassForIntegerConstant(astElement, typeinfoOfVariables);
         }
+        else if( astElement.type.isEqualWithType(new Type(Type.EnumType.VARIABLE)) ) {
+            return generateBodyForwardPassForVariable(astElement, typeinfoOfVariables);
+        }
+
         else {
             throw new RuntimeException("Internal Error!");
         }
+    }
+
+    private InlinedResultCodeWithType generateBodyForwardPassForVariable(Element astElement, Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException {
+        final String variableName = astElement.identifier;
+
+        if( !typeinfoOfVariables.containsKey(variableName) ) {
+            throw new RuntimeException("Static compilation Error: Variable " + variableName + " was not found!");
+        }
+
+        final Typeinfo typeinfoOfVariable = typeinfoOfVariables.get(variableName);
+        final Typeinfo resultType = typeinfoOfVariable;
+
+        StringBuilder resultCodeBuilder = new StringBuilder();
+        resultCodeBuilder.append(String.format("result = %s.%s(variables.%s);\n", RESULT_AND_PROPAGATION_TYPENAME, ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForCreationOfType(typeinfoOfVariable), variableName));
+
+        final String resultCode = resultCodeBuilder.toString();
+        final GeneratedFunctionInfo generatedFunctionInfo = emitInternalFunction(resultType, resultCode);
+
+        return new InlinedResultCodeWithType(resultType, generatedFunctionInfo);
     }
 
     private InlinedResultCodeWithType generateBodyForwardPassForMathematicalAccumulatorOperation(String operationString, EnumMathematicalAccumulatorInitialValue accumulatorInitialValue, Element astElement, Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException {
@@ -167,7 +208,7 @@ public class CodegenJava {
     }
 
     private InlinedResultCodeWithType generateBodyForwardPassForCondition(Element condition, Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException {
-        assert condition.type.isEqualWithType(new Type(Type.EnumType.COND));
+        //assert condition.type.isEqualWithType(new Type(Type.EnumType.COND));
 
         Element conditionCheck = (Element)condition.children.get(0);
         Element conditionTrue = (Element) condition.children.get(1);
@@ -218,8 +259,11 @@ public class CodegenJava {
 
 
     private String getJavaFunctioncallForFunction(GeneratedFunctionInfo functionInfo) {
-        // TODO< parameters >
-        return functionInfo.getInternalFunctionname() + "()";
+        return functionInfo.getInternalFunctionname() + "(variables)";
+    }
+
+    private String getJavaClassnameOfVariableContainer() {
+        return variableContainerClassName;
     }
 
 
@@ -234,7 +278,7 @@ public class CodegenJava {
         StringBuilder functionCodeBuilder = new StringBuilder();
 
         // for now public for debugging, later private
-        functionCodeBuilder.append(String.format("public static %s %s() {\n", RESULT_AND_PROPAGATION_TYPENAME, generatedFunctionInfo.getInternalFunctionname()));
+        functionCodeBuilder.append(String.format("public static %s %s(%s variables) {\n", RESULT_AND_PROPAGATION_TYPENAME, generatedFunctionInfo.getInternalFunctionname(), getJavaClassnameOfVariableContainer()));
 
         functionCodeBuilder.append("// codegen: result allocation\n");
         functionCodeBuilder.append(RESULT_AND_PROPAGATION_TYPENAME + " result;\n");
