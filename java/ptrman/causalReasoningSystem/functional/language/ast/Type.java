@@ -18,10 +18,11 @@ public class Type extends ptrman.causalReasoningSystem.functional.tree.Type {
         COMPARISION_EQUAL,
         COMPARISION_NOTEQUAL,
 
+        /*
         OPERATION_SUBTRACTION,
         OPERATION_ADDITION,
         OPERATION_MULTIPLICATION,
-        OPERATION_DIVISION,
+        OPERATION_DIVISION,*/
 
         NIL,
 

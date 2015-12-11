@@ -37,7 +37,7 @@ public class Parser extends BaseParser<ParseTreeElement> {
         return firstOf(
             sequence(standardCallBraces(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()}))),
             sequence(variable(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()}))),
-            sequence(integer(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.CONSTANT_INTEGER, new ParseTreeElement[]{pop()})))
+            sequence(integer(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()})))
         );
     }
 

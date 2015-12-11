@@ -19,6 +19,14 @@ public class ConvertParseTreeToAst {
             result.identifier = convertedRoot.identifier;
             return result;
         }
+        else if( root instanceof BasicIntegerParseTreeElement ) {
+            BasicIntegerParseTreeElement convertedRoot = (BasicIntegerParseTreeElement) root;
+
+            Element result = new Element(new Type(Type.EnumType.CONSTANT_INTEGER));
+            result.constantInteger = Integer.parseInt(convertedRoot.constant);
+            return result;
+        }
+
         else if( root instanceof HasChildrenParseTreeElement ) {
             HasChildrenParseTreeElement convertedRoot = (HasChildrenParseTreeElement)root;
 
@@ -70,7 +78,10 @@ public class ConvertParseTreeToAst {
                 result.constantInteger = Integer.parseInt(constantParseTreeElement.constant);
                 return result;
             }
-
+            else if( convertedRoot.type == HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES ) {
+                // simplfy it
+                return convert(convertedRoot.children[0]);
+            }
             else {
                 throw new RuntimeException("Internal Error!");
             }

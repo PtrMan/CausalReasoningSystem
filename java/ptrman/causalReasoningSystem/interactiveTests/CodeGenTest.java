@@ -23,13 +23,13 @@ public class CodeGenTest {
         CtClass class0 = ctPool.makeClass("GeneratedCode");
 
 
-        ParseTreeElement parseTree = Parse.parse("5");
+        ParseTreeElement parseTree = Parse.parse("(+ 5 4)");
         Element ast = ConvertParseTreeToAst.convert(parseTree);
 
 
         CodegenJava codegen = new CodegenJava(class0);
         try {
-            codegen.generateBodyForwardPassForIntegerConstant(ast, new HashMap<>());
+            codegen.generateBodyForwardPass(ast, new HashMap<>());
         } catch (CannotCompileException e) {
             e.printStackTrace();
         }
