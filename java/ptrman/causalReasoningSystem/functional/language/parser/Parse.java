@@ -13,7 +13,7 @@ public class Parse {
     public static ParseTreeElement parse(String text) {
         Parser parser = Grappa.createParser(Parser.class);
 
-        ParseRunner<ParseTreeElement> runner = new ListeningParseRunner<>(parser.standardCallBraces());
+        ParseRunner<ParseTreeElement> runner = new ListeningParseRunner<>(parser.variableOrConstantOrStandardCallBraces());
         ParsingResult<ParseTreeElement> parsingResult = runner.run(text);
 
         if (!parsingResult.isSuccess()) {
