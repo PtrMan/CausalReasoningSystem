@@ -24,6 +24,18 @@ public class ResultAndControlflowPropagationInfo {
         return result;
     }
 
+    // called from generated code
+    public static boolean extractBoolean(ResultAndControlflowPropagationInfo info) {
+        return info.resultBoolean;
+    }
+
+    // called from generated code
+    public static int extractInteger(ResultAndControlflowPropagationInfo info) {
+        return info.resultInteger;
+    }
+
+
+
 
     // used by codegeneration
     public static String codegenGetJavaFunctionnameForCreationOfType(Typeinfo typeinfo) {
@@ -37,4 +49,15 @@ public class ResultAndControlflowPropagationInfo {
         throw new RuntimeException("Internal Error: No function for Static Runtime found to create value of type!");
     }
 
+    // used by codegeneration
+    public static String codegenGetJavaFunctionnameForExtractionOfValueOfType(Typeinfo typeinfo) {
+        if( typeinfo.type == Typeinfo.EnumType.BOOLEAN ) {
+            return "extractBoolean";
+        }
+        else if( typeinfo.type == Typeinfo.EnumType.INTEGER ) {
+            return "extractInteger";
+        }
+
+        throw new RuntimeException("Internal Error: No function for Static Runtime found to extract value of type!");
+    }
 }

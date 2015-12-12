@@ -42,14 +42,7 @@ public class Parser extends BaseParser<ParseTreeElement> {
     }
 
     Rule identifierOrFunctionOrOperator() {
-        // TODO< other cases >
-        return firstOf(
-                sequence(basicIdentifier(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.IDENTIFIER_OR_FUNCTION_OR_OPERATOR, new ParseTreeElement[]{pop()}))),
-                sequence('+', push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.IDENTIFIER_OR_FUNCTION_OR_OPERATOR, new ParseTreeElement[]{new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.PLUS, new ParseTreeElement[]{})}))),
-                sequence('-', push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.IDENTIFIER_OR_FUNCTION_OR_OPERATOR, new ParseTreeElement[]{new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.MINUS, new ParseTreeElement[]{})}))),
-                sequence('*', push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.IDENTIFIER_OR_FUNCTION_OR_OPERATOR, new ParseTreeElement[]{new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.MUL, new ParseTreeElement[]{})}))),
-                sequence('/', push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.IDENTIFIER_OR_FUNCTION_OR_OPERATOR, new ParseTreeElement[]{new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.DIV, new ParseTreeElement[]{})})))
-        );
+        return sequence(extendedIdentifier(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.IDENTIFIER_OR_FUNCTION_OR_OPERATOR, new ParseTreeElement[]{pop()})));
     }
 
     Rule variable() {
@@ -66,6 +59,18 @@ public class Parser extends BaseParser<ParseTreeElement> {
                 push(new BasicIdentifierParseTreeElement(var.get() + match()))
         );
     }
+
+    Rule extendedIdentifier() {
+        StringVar var = new StringVar();
+
+        return sequence(
+                anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=<>"),
+                var.append(match()),
+                zeroOrMore(anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-*/=<>")),
+                push(new BasicIdentifierParseTreeElement(var.get() + match()))
+        );
+    }
+
 
     Rule integer() {
         StringVar var = new StringVar();

@@ -26,7 +26,7 @@ public class CodeGenTest {
         CtClass class0 = ctPool.makeClass("GeneratedCode");
 
 
-        ParseTreeElement parseTree = Parse.parse("(cond booleanX 5 6)");
+        ParseTreeElement parseTree = Parse.parse("(cond (< 5 9) 5 6)");
         Element ast = ConvertParseTreeToAst.convert(parseTree);
 
 

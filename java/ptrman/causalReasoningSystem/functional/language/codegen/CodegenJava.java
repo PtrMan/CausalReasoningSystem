@@ -74,26 +74,43 @@ public class CodegenJava {
         }*/
         if( astElement.type.isEqualWithType(new Type(Type.EnumType.FUNCTION_CALL))) {
             if( astElement.identifier == null ) {
-                if( astElement.callType == Element.EnumCallType.ADD ) {
-                    return generateBodyForwardPassForMathematicalAccumulatorOperation("+", EnumMathematicalAccumulatorInitialValue.ZERO, astElement, typeinfoOfVariables);
-                }
-                else if( astElement.callType == Element.EnumCallType.SUB ) {
-                    return generateBodyForwardPassForMathematicalAccumulatorOperation("-", EnumMathematicalAccumulatorInitialValue.ZERO, astElement, typeinfoOfVariables);
-                }
-                else if( astElement.callType == Element.EnumCallType.MUL ) {
-                    return generateBodyForwardPassForMathematicalAccumulatorOperation("*", EnumMathematicalAccumulatorInitialValue.ONE, astElement, typeinfoOfVariables);
-                }
-                else if( astElement.callType == Element.EnumCallType.DIV ) {
-                    return generateBodyForwardPassForMathematicalAccumulatorOperation("/", EnumMathematicalAccumulatorInitialValue.ONE, astElement, typeinfoOfVariables);
-                }
-                else {
-                    throw new RuntimeException("Internal Error!");
-                }
+                throw new RuntimeException("Internal Error!");
             }
             else {
                 if( astElement.identifier.equals("cond") ) {
                     return generateBodyForwardPassForCondition(astElement, typeinfoOfVariables);
                 }
+                else if( astElement.identifier.equals("+") ) {
+                    return generateBodyForwardPassForMathematicalAccumulatorOperation("+", EnumMathematicalAccumulatorInitialValue.ZERO, astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals("-") ) {
+                    return generateBodyForwardPassForMathematicalAccumulatorOperation("-", EnumMathematicalAccumulatorInitialValue.ZERO, astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals("*") ) {
+                    return generateBodyForwardPassForMathematicalAccumulatorOperation("*", EnumMathematicalAccumulatorInitialValue.ONE, astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals("/") ) {
+                    return generateBodyForwardPassForMathematicalAccumulatorOperation("/", EnumMathematicalAccumulatorInitialValue.ONE, astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals("==") ) {
+                    return generateBodyForwardPassForComparision("==", astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals(">") ) {
+                    return generateBodyForwardPassForComparision(">", astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals(">=") ) {
+                    return generateBodyForwardPassForComparision(">=", astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals("<") ) {
+                    return generateBodyForwardPassForComparision("<", astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals("<=") ) {
+                    return generateBodyForwardPassForComparision("<=", astElement, typeinfoOfVariables);
+                }
+                else if( astElement.identifier.equals("/=") ) {
+                    return generateBodyForwardPassForComparision("/=", astElement, typeinfoOfVariables);
+                }
+
 
 
                 throw new RuntimeException("TODO< generate code for call of function >");
@@ -108,6 +125,93 @@ public class CodegenJava {
 
         else {
             throw new RuntimeException("Internal Error!");
+        }
+    }
+
+    private InlinedResultCodeWithType generateBodyForwardPassForComparision(String operationString, Element astElement, Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException {
+        // check if types are all equal
+        final List<InlinedResultCodeWithType> inlinedResultCodeForArguments = inlineResultCodeForAllArguments(astElement, typeinfoOfVariables);
+        final List<Typeinfo> typesOfArguments = getTypesOfInlinedResultCodeWithType(inlinedResultCodeForArguments);
+        final boolean allTypesAreEqual = areTypesEqual(typesOfArguments);
+        if( !allTypesAreEqual ) {
+            throw new RuntimeException("Compilation Error: types are not equal!");
+        }
+        final Typeinfo resultType = new Typeinfo(Typeinfo.EnumType.BOOLEAN);
+
+        final InlinedResultCodeWithType inlinedOperand0 = inlinedResultCodeForArguments.get(0);
+        final InlinedResultCodeWithType inlinedOperand1 = inlinedResultCodeForArguments.get(1);
+
+        StringBuilder resultCodeBuilder = new StringBuilder();
+        resultCodeBuilder.append("// codegen: first two arguments\n");
+        resultCodeBuilder.append(String.format("%s operand0 = %s;\n", RESULT_AND_PROPAGATION_TYPENAME, getJavaFunctioncallForFunction(inlinedOperand0.functionInfo)));
+        resultCodeBuilder.append(String.format("%s operand1 = %s;\n", RESULT_AND_PROPAGATION_TYPENAME, getJavaFunctioncallForFunction(inlinedOperand1.functionInfo)));
+        resultCodeBuilder.append("\n");
+        resultCodeBuilder.append("\n");
+
+
+        resultCodeBuilder.append(String.format("%s operand0Value = %s.%s(operand0);\n", resultType.getJavaTypeString(), RESULT_AND_PROPAGATION_TYPENAME, ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForExtractionOfValueOfType(resultType)));
+        resultCodeBuilder.append(String.format("%s operand1Value = %s.%s(operand1);\n", resultType.getJavaTypeString(), RESULT_AND_PROPAGATION_TYPENAME, ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForExtractionOfValueOfType(resultType)));
+        resultCodeBuilder.append("\n");
+        resultCodeBuilder.append("\n");
+
+        // generate code to compare first two values
+        // depending on the comparision we return a boolean or we continue comparision until we are done with all
+        final String javaComparision = getJavaComparisionForFunctionalComparision(operationString);
+
+        resultCodeBuilder.append(String.format("if( !(operand%sValue %s operand%sValue) ) {\n", 0, javaComparision, 1));
+        resultCodeBuilder.append(String.format("   return %s.%s(false);\n", RESULT_AND_PROPAGATION_TYPENAME, ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForCreationOfType(new Typeinfo(Typeinfo.EnumType.BOOLEAN))));
+        resultCodeBuilder.append(              "}\n");
+        resultCodeBuilder.append(              "\n");
+
+
+        // generate code for compare remaining operands
+        for( int operandI = 2; operandI < inlinedResultCodeForArguments.size(); operandI++ ) {
+            resultCodeBuilder.append(String.format("%s operand%s = %s;\n", RESULT_AND_PROPAGATION_TYPENAME, operandI, getJavaFunctioncallForFunction(inlinedOperand1.functionInfo)));
+            resultCodeBuilder.append(String.format("%s operand%sValue = %s.%s(operand%s);\n", resultType.getJavaTypeString(), operandI, RESULT_AND_PROPAGATION_TYPENAME, ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForExtractionOfValueOfType(resultType), operandI));
+
+            resultCodeBuilder.append(String.format("if( !(operand%sValue %s operand%sValue) ) {\n", operandI-1, javaComparision, operandI));
+            resultCodeBuilder.append(String.format("   return %s.%s(false);\n", RESULT_AND_PROPAGATION_TYPENAME, ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForCreationOfType(new Typeinfo(Typeinfo.EnumType.BOOLEAN))));
+            resultCodeBuilder.append(              "}\n");
+            resultCodeBuilder.append(              "\n");
+        }
+
+        resultCodeBuilder.append(String.format("return %s.%s(true);\n", RESULT_AND_PROPAGATION_TYPENAME, ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForCreationOfType(new Typeinfo(Typeinfo.EnumType.BOOLEAN))));
+
+
+        final String resultCode = resultCodeBuilder.toString();
+        final GeneratedFunctionInfo generatedFunctionInfo = emitInternalFunction(resultType, resultCode);
+
+        return new InlinedResultCodeWithType(resultType, generatedFunctionInfo);
+    }
+
+    private boolean areTypesEqual(List<Typeinfo> types) {
+        final Typeinfo comparisonType = types.get(0);
+
+        for( int i = 1; i < types.size(); i++ ) {
+            final Typeinfo iterationType = types.get(1);
+
+            if( !comparisonType.isEqual(iterationType) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static String getJavaComparisionForFunctionalComparision(String comparision) {
+        if( comparision.equals("/=") ) {
+            return "!=";
+        }
+
+        switch (comparision) {
+            case "==":
+            case ">=":
+            case ">":
+            case "<=":
+            case "<":
+                return comparision;
+            default:
+                throw new RuntimeException("Internal Error: " + comparision + " is not a valid comparision!");
         }
     }
 
