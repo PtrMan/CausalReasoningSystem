@@ -28,7 +28,7 @@ public class Type extends ptrman.causalReasoningSystem.functional.tree.Type {
 
         VARIABLE,
 
-        CONSTANT_INTEGER
+        STATICDICT_CONSTRUCTOR, CONSTANT_INTEGER
     }
 
     private final EnumType type;

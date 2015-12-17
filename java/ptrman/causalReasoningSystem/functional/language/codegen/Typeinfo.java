@@ -8,6 +8,17 @@ public class Typeinfo {
         return type == other.type;
     }
 
+    public String getJavaDefaultValue() {
+        if( type == EnumType.INTEGER ) {
+            return "0";
+        }
+        else if( type == EnumType.BOOLEAN ) {
+            return "false";
+        }
+
+        throw new RuntimeException("Internal error!");
+    }
+
     public enum EnumType {
         BOOLEAN, INTEGER
     }

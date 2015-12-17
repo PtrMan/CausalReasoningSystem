@@ -5,10 +5,7 @@ import com.github.fge.grappa.parsers.BaseParser;
 import com.github.fge.grappa.rules.Rule;
 import com.github.fge.grappa.support.StringVar;
 import com.github.fge.grappa.support.Var;
-import ptrman.causalReasoningSystem.functional.language.parseTree.BasicIdentifierParseTreeElement;
-import ptrman.causalReasoningSystem.functional.language.parseTree.BasicIntegerParseTreeElement;
-import ptrman.causalReasoningSystem.functional.language.parseTree.HasChildrenParseTreeElement;
-import ptrman.causalReasoningSystem.functional.language.parseTree.ParseTreeElement;
+import ptrman.causalReasoningSystem.functional.language.parseTree.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,18 +23,32 @@ public class Parser extends BaseParser<ParseTreeElement> {
                 '(',
                 whiteSpaces(), identifierOrFunctionOrOperator(), callIdentifier.set(pop()), whiteSpaces(),
                 optional(
-                        variableOrConstantOrStandardCallBraces(), arguments.get().add(pop()), whiteSpaces(),
-                        zeroOrMore(variableOrConstantOrStandardCallBraces(), arguments.get().add(pop()), whiteSpaces())
+                        variableOrConstantOrStandardCallBracesOrDictConstructor(), arguments.get().add(pop()), whiteSpaces(),
+                        zeroOrMore(variableOrConstantOrStandardCallBracesOrDictConstructor(), arguments.get().add(pop()), whiteSpaces())
                 ),
                 ')',
                 push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.STANDARDCALL_BRACES, convertElementAndListToArray(callIdentifier.get(), arguments.get()))));
     }
 
-    Rule variableOrConstantOrStandardCallBraces() {
+    Rule variableOrConstantOrStandardCallBracesOrDictConstructor() {
         return firstOf(
             sequence(standardCallBraces(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()}))),
             sequence(variable(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()}))),
-            sequence(integer(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()})))
+            sequence(integer(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()}))),
+            sequence(dictConstructor(), push(new HasChildrenParseTreeElement(HasChildrenParseTreeElement.EnumType.VARIABLE_OR_CONSTANT_OR_STANDARD_CALL_BRACES, new ParseTreeElement[]{pop()})))
+        );
+    }
+
+    Rule dictConstructor() {
+        Var<List<ParseTreeElement>> names = new Var<>(new ArrayList<>());
+        Var<List<ParseTreeElement>> arguments = new Var<>(new ArrayList<>());
+
+        return sequence(
+            '{', whiteSpaces(),
+            '\"', basicIdentifier(), names.get().add(pop()),'\"', whiteSpaces(), ':', whiteSpaces(), variableOrConstantOrStandardCallBracesOrDictConstructor(), arguments.get().add(pop()), whiteSpaces(),
+            zeroOrMore(',', whiteSpaces(),  '\"', basicIdentifier(), names.get().add(pop()),'\"', whiteSpaces(), ':', whiteSpaces(), variableOrConstantOrStandardCallBracesOrDictConstructor(), arguments.get().add(pop()), whiteSpaces()),
+            '}',
+            push(new DictConstructorParseTreeElement(names.get(), arguments.get()))
         );
     }
 

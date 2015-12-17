@@ -1,11 +1,11 @@
 package ptrman.causalReasoningSystem.functional.language.convertParseTreeToAst;
 
 import ptrman.causalReasoningSystem.functional.language.ast.Type;
-import ptrman.causalReasoningSystem.functional.language.parseTree.BasicIdentifierParseTreeElement;
-import ptrman.causalReasoningSystem.functional.language.parseTree.BasicIntegerParseTreeElement;
-import ptrman.causalReasoningSystem.functional.language.parseTree.HasChildrenParseTreeElement;
-import ptrman.causalReasoningSystem.functional.language.parseTree.ParseTreeElement;
+import ptrman.causalReasoningSystem.functional.language.parseTree.*;
 import ptrman.causalReasoningSystem.functional.language.ast.Element;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by r0b3 on 10.12.2015.
@@ -24,6 +24,21 @@ public class ConvertParseTreeToAst {
 
             Element result = new Element(new Type(Type.EnumType.CONSTANT_INTEGER));
             result.constantInteger = Integer.parseInt(convertedRoot.constant);
+            return result;
+        }
+        else if( root instanceof DictConstructorParseTreeElement ) {
+            DictConstructorParseTreeElement convertRoot = (DictConstructorParseTreeElement)root;
+
+            List<Element.DictElement> dictElements = new ArrayList<>();
+
+            for( int i = 0; i < convertRoot.names.size(); i++ ) {
+                final String keyIdentifier = ((BasicIdentifierParseTreeElement)convertRoot.names.get(i)).identifier;
+                final Element element = convert(convertRoot.values.get(i));
+                dictElements.add(new Element.DictElement(keyIdentifier, element));
+            }
+
+            Element result = new Element(new Type(Type.EnumType.STATICDICT_CONSTRUCTOR));
+            result.dictConstructorValues = dictElements;
             return result;
         }
         else if( root instanceof HasChildrenParseTreeElement ) {

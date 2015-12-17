@@ -4,9 +4,7 @@ import javassist.*;
 import ptrman.causalReasoningSystem.functional.language.ast.Element;
 import ptrman.causalReasoningSystem.functional.language.ast.Type;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import ptrman.causalReasoningSystem.functional.language.runtime.ResultAndControlflowPropagationInfo;
 
@@ -33,6 +31,8 @@ public class CodegenJava {
 
     private String variableContainerClassName;
     private CtClass classForVariableContainer;
+
+    private StaticDictDatabase staticDictDatabase = new StaticDictDatabase();
 
     public CodegenJava(ClassPool classPool, CtClass classTemplate) {
         this.ctClass = classTemplate;
@@ -122,10 +122,79 @@ public class CodegenJava {
         else if( astElement.type.isEqualWithType(new Type(Type.EnumType.VARIABLE)) ) {
             return generateBodyForwardPassForVariable(astElement, typeinfoOfVariables);
         }
-
+        if( astElement.type.isEqualWithType(new Type(Type.EnumType.STATICDICT_CONSTRUCTOR))) {
+            return generateBodyForwardPassForStaticdictConstructor(astElement, typeinfoOfVariables);
+        }
         else {
             throw new RuntimeException("Internal Error!");
         }
+    }
+
+    private InlinedResultCodeWithType generateBodyForwardPassForStaticdictConstructor(Element astElement, Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException {
+        // generate code for all arguments
+        List<InlinedResultCodeWithType> inlinedResultCodeForParameters = new ArrayList<>();
+        for( Element.DictElement iterationtionDictConstructorParameter : astElement.dictConstructorValues) {
+            inlinedResultCodeForParameters.add(generateBodyForwardPass(iterationtionDictConstructorParameter.valueElement, typeinfoOfVariables));
+        }
+
+        // check if all keys are mentioned only once
+        Set<String> keySet = new HashSet<>();
+        for( Element.DictElement iterationtionDictConstructorParameter : astElement.dictConstructorValues ) {
+            if( keySet.contains(iterationtionDictConstructorParameter.key)) {
+                throw new RuntimeException("Compilation Error: key " + iterationtionDictConstructorParameter.key + " is mentioned more than once!");
+            }
+            keySet.add(iterationtionDictConstructorParameter.key);
+        }
+
+        // collect key names and types
+        Map<String, Typeinfo> staticDictKeyAndTypes = new HashMap<>();
+        for( int dictParameterI = 0; dictParameterI < inlinedResultCodeForParameters.size(); dictParameterI++ ) {
+            staticDictKeyAndTypes.put(astElement.dictConstructorValues.get(dictParameterI).key, inlinedResultCodeForParameters.get(dictParameterI).returnType);
+        }
+
+        final String javaClassnameOfcreatedClassForStaticDict = getJavaClassnameOfStaticDictConstructorValuesAndTypes(staticDictKeyAndTypes);
+
+
+        StringBuilder resultCodeBuilder = new StringBuilder();
+
+        resultCodeBuilder.append(String.format("%s resultDict = new ", javaClassnameOfcreatedClassForStaticDict));
+        StaticDict staticDict = staticDictDatabase.map.get(javaClassnameOfcreatedClassForStaticDict);
+        CodegenJavaStaticDict.createJavaCodeForConstructorCallWithoutArguments(staticDict, resultCodeBuilder);
+        resultCodeBuilder.append(";\n");
+
+
+        for( int dictParameterI = 0; dictParameterI < inlinedResultCodeForParameters.size(); dictParameterI++ ) {
+            final String key = astElement.dictConstructorValues.get(dictParameterI).key;
+            final String internalJavaFunctionnameToCallForValue = inlinedResultCodeForParameters.get(dictParameterI).functionInfo.getInternalFunctionname();
+
+            final Typeinfo internalFunctionReturnType = inlinedResultCodeForParameters.get(dictParameterI).returnType;
+            String methodToCallToExtractValueOfType = ResultAndControlflowPropagationInfo.codegenGetJavaFunctionnameForExtractionOfValueOfType(internalFunctionReturnType);
+
+            resultCodeBuilder.append(String.format("resultDict.%s = %s.%s(%s());\n", key, RESULT_AND_PROPAGATION_TYPENAME, methodToCallToExtractValueOfType, internalJavaFunctionnameToCallForValue));
+        }
+
+        // TODO< generate code to
+        // * create subclass of ResultAndConstrolfowPropagation
+        // * set the value of the  javaClassnameOfcreatedClassForStaticDict  to resultDict
+        
+        // * return the casted class
+        // >
+
+
+
+        // TODO TODO TODO
+
+        final String resultCode = resultCodeBuilder.toString();
+        final GeneratedFunctionInfo generatedFunctionInfo = emitInternalFunction(resultType, resultCode);
+
+        return new InlinedResultCodeWithType(resultType, generatedFunctionInfo);
+    }
+
+    private String getJavaClassnameOfStaticDictConstructorValuesAndTypes(Map<String, Typeinfo> staticDictKeyAndTypes) {
+        // TODO< real retrival of the classname of the dict after a global registry >
+
+        // just return a dummy value for the tests
+        return "";
     }
 
     private InlinedResultCodeWithType generateBodyForwardPassForComparision(String operationString, Element astElement, Map<String, Typeinfo> typeinfoOfVariables) throws CannotCompileException {
